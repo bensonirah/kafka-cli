@@ -1,0 +1,40 @@
+#!/bin/bash
+
+function server::start {
+    kafka-server-start.sh $KAFKA_HOME/config/server.properties
+}
+
+function server::stop {
+    echo "Stop server"
+}
+
+function topic::create {
+    local topicName="$1"
+    kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic $topicName
+}
+
+function console::consumer {
+    local topicName="$1"
+    kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic $topicName --from-beginning
+}
+
+function console::producer {
+    local topicName="$1"
+    read data
+    echo "$data" | kafka-console-producer.sh --broker-list localhost:9092 --topic $topicName
+}
+
+#[Entry]
+function run() {
+    local _command="$1"
+    local _handler="$2"
+    shift 2
+    # Router
+    if type "$_command::$_handler" >/dev/null 2>&1; then
+        $_command::$_handler $@
+        exit 0
+    fi
+    echo "Show error message"
+}
+
+run $@
